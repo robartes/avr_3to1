@@ -125,7 +125,7 @@ int main(void)
 	while (1) {
 
 		// Light LEDS for which buttons_pressed bit is high
-		PORTB = (PORTB & LED_MASK) | (0xFF ^ buttons_pressed);
+		PORTB = (PORTB & LED_MASK) & (0xFF ^ buttons_pressed);
 		_delay_ms(MAIN_LOOP_DELAY);
 
 	}

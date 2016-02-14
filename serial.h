@@ -13,8 +13,6 @@
 
 #define	TX_PORT						PORTB
 #define TX_PIN						PB0
-#define	RX_PORT						PINB
-#define	RX_PIN						PB2
 #define SERIAL_SPEED				SERIAL_SPEED_9600
 #define RX_BUFFER_SIZE				64			// In bytes
 #define TX_BUFFER_SIZE				64			// In bytes
@@ -74,6 +72,7 @@ extern return_code_t serial_put_char(uint8_t data);
 
 extern uint16_t serial_send_data(char *data, uint16_t data_length);
 
+#ifndef TX_ONLY
 /************************************************************************
  * serial_data_pending: Check whether any data has been received
  *
@@ -106,3 +105,4 @@ extern uint8_t serial_get_char();
 
 extern void serial_enable_receive();
 extern void serial_disable_receive();
+#endif

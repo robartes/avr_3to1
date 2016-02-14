@@ -11,24 +11,32 @@
 
 #define NUM_BUTTON_COMBINATIONS	7
 
-#define BUTTON_1		0b00000001
-#define BUTTON_2		0b00000010
-#define BUTTON_3		0b00000100
-#define BUTTON_1_2		0b00000011
-#define BUTTON_1_3		0b00000101
-#define BUTTON_2_3		0b00000110
-#define BUTTON_1_2_3	0b00000111
-
 #define LED_1		PB1
 #define LED_2		PB3
 #define LED_3		PB4
 #define LED_MASK 	0b11100101
+
+// Button to LED definitions, assuming LEDs on pins above
+// This are the values the PORTB is OR'ed with later
+// All non LED pins 0
+// Lit LEDs 0
+// Unlit LEDs 1
+#define BUTTON_1		0b00011000
+#define BUTTON_2		0b00010010
+#define BUTTON_3		0b00001010
+#define BUTTON_1_2		0b00010000
+#define BUTTON_1_3		0b00001000
+#define BUTTON_2_3		0b00000010
+#define BUTTON_1_2_3	0b00000000
+#define NO_BUTTONS		0b00011010
+
 
 #define INPUT	PB2
 
 #define MAIN_LOOP_DELAY		100	// ms
 
 volatile uint8_t buttons_pressed = 0;
+volatile uint8_t adc_output_counter = 0;
 static char *adc_result_string;
 
 struct lut {
@@ -49,8 +57,9 @@ static struct lut lookup_table[NUM_BUTTON_COMBINATIONS] = {
 void setup_IO(void) 
 {
 
-	DDRB = 0b11111101;
-	PORTB = 0b11111111; // Sink current for LEDs, so high for off
+	DDRB = 0b00011010;
+	PORTB = 0b11111011; // Sink current for LEDs, so high for off
+						// No pullup for PB2
 
 }
 
@@ -98,9 +107,10 @@ ISR(ADC_vect)
 	uint8_t adc_value = ADCH;
 	uint8_t i;
 	
-	debug_write_value(adc_value);
+	if (adc_output_counter++ == 0)	
+		debug_write_value(adc_value);
 
-	buttons_pressed = 0;
+	buttons_pressed = NO_BUTTONS;
 
 	for (i = 0; i < NUM_BUTTON_COMBINATIONS; i++) {
 
@@ -119,13 +129,16 @@ int main(void)
 
 	setup_IO();
 	serial_initialise();
+	serial_send_data("Canary",6);
 	setup_ADC();
+
 
 	// Main loop
 	while (1) {
 
-		// Light LEDS for which buttons_pressed bit is high
-		PORTB = (PORTB & LED_MASK) & (0xFF ^ buttons_pressed);
+		// Light LEDS for which buttons_pressed bit is high. There's some
+		// bit twiddling involved
+		PORTB = (PORTB & LED_MASK) | buttons_pressed;
 		_delay_ms(MAIN_LOOP_DELAY);
 
 	}
